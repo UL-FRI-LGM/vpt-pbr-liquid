@@ -38,6 +38,11 @@ precision mediump float;
 
 #define MSIZE 255
 
+#define AVOGADRO_CONSTANT 6.02214179 * pow(10.0f, 23.0f)
+#define MOLAR_MASS_WATER 18.01528
+#define M_PI 3.1415926535
+#define POLARIZABILITY_WATER_532nm 1.4864
+
 @Photon
 
 uniform mediump sampler2D uPosition;
@@ -291,6 +296,24 @@ vec4 sampleVolumeColor(vec3 position) {
     }
 }
 
+float calculateRefractiveIndexFromDensity(float d) {
+    float x = 4.0 * M_PI * d * AVOGADRO_CONSTANT * POLARIZABILITY_WATER_532nm / (3.0 * MOLAR_MASS_WATER) + 1.0;
+    float x2 = x * x;
+    return pow(x2, 0.33f);
+}
+
+float calculateRefractiveIndexRatio(Photon photon) {
+    float previousRI = calculateRefractiveIndexFromDensity(photon.previousDensity);
+    float currentRI = calculateRefractiveIndexFromDensity(photon.density);
+    return currentRI / previousRI;
+}
+
+vec3 refractPhoton(Photon photon) {
+    float indexRatio = calculateRefractiveIndexRatio(photon);
+    vec3 normalVector = texture(uVolume0, photon.position).rgb;
+    return refract(normalize(photon.direction), normalize(normalVector), indexRatio);
+}
+
 vec3 randomDirection(vec2 U) {
     float phi = U.x * M_2PI;
     float z = U.y * 2.0 - 1.0;
@@ -320,6 +343,9 @@ void main() {
     vec2 mappedPosition = vPosition * 0.5 + 0.5;
     photon.position = texture(uPosition, mappedPosition).xyz;
     vec4 directionAndBounces = texture(uDirection, mappedPosition);
+    float density = texture(uVolume0, photon.position).w;
+    photon.density = density;
+    photon.previousDensity = density;
     photon.direction = directionAndBounces.xyz;
     photon.bounces = uint(directionAndBounces.w + 0.5);
     photon.transmittance = texture(uTransmittance, mappedPosition).rgb;
@@ -341,6 +367,8 @@ void main() {
         float PNull = abs(muNull) / muMajorant;
         float PAbsorption = muAbsorption / muMajorant;
         float PScattering = muScattering / muMajorant;
+
+        photon.density = length(texture(uVolume0, photon.position).rgb);
 
         // if (any(greaterThan(photon.position, vec3(1))) || any(lessThan(photon.position, vec3(0)))) {
         if (any(greaterThan(photon.position, uMaxCutPlaneValues)) || any(lessThan(photon.position, uMinCutPlaneValues))) {
@@ -372,6 +400,7 @@ void main() {
             float weightN = muNull / (uMajorant * PNull);
             photon.transmittance *= weightN;
         }
+        photon.previousDensity = photon.density;
     }
 
     oPosition = vec4(photon.position, 0);
