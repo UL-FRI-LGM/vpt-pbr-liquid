@@ -692,7 +692,9 @@ const modalityTemplate = {
             0, 0, 0, 1
         ]
     },
-    placements: []
+    placements: [],
+    maxDensity: 0,
+    minDensity: 0
 };
 
 let manifestOutputFile = {
@@ -728,6 +730,13 @@ for (let i = 2; i < process.argv.length - 1; i++) {
                 currentModality.name = val;
                 manifest.modalities.push(currentModality);
             }
+            break;
+        case '-maxd':
+            currentModality.maxDensity = val;
+            break;
+
+        case '-mind':
+            currentModality.minDensity = val;
             break;
 
         case '-i':

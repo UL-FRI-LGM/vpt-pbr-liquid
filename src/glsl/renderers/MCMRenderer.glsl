@@ -42,6 +42,8 @@ precision mediump float;
 #define MOLAR_MASS_WATER 18.01528
 #define M_PI 3.1415926535
 #define POLARIZABILITY_WATER_532nm 1.4864
+#define FLOOR_DENSITY 3000.0f
+#define FLOOR_REFRACTIVE_INDEX 50000.0f
 
 @Photon
 
@@ -97,6 +99,10 @@ uniform vec3 uMinCutPlaneValues;
 uniform vec3 uMaxCutPlaneValues;
 uniform float uViewCutDistance;
 
+uniform float uMinDensity;
+uniform float uMaxDensity;
+
+uniform float uSize;
 
 in vec2 vPosition;
 
@@ -296,22 +302,100 @@ vec4 sampleVolumeColor(vec3 position) {
     }
 }
 
+// calculate actual density value from .raw file
+float calculateDensityFromRatio(float ratio) {
+    if (ratio == 255.0f) {
+        return FLOOR_DENSITY;
+    }
+    float interval = uMaxDensity - uMinDensity;
+    float percentage = ratio / 255.0f;
+    return (percentage * interval) + uMinDensity;
+}
+
 float calculateRefractiveIndexFromDensity(float d) {
+    if (d == FLOOR_DENSITY) {
+        // if density is that of floor, return very big refractive index to assure bouncing
+        return FLOOR_REFRACTIVE_INDEX;
+    }
     float x = 4.0 * M_PI * d * AVOGADRO_CONSTANT * POLARIZABILITY_WATER_532nm / (3.0 * MOLAR_MASS_WATER) + 1.0;
     float x2 = x * x;
     return pow(x2, 0.33f);
 }
 
-float calculateRefractiveIndexRatio(Photon photon) {
-    float previousRI = calculateRefractiveIndexFromDensity(photon.previousDensity);
-    float currentRI = calculateRefractiveIndexFromDensity(photon.density);
-    return currentRI / previousRI;
+vec3 getVectorOfCertainLength(vec3 vector, float desiredLength) {
+    float vectorLength = length(vector);
+    return desiredLength * vector / vectorLength;
 }
 
-vec3 refractPhoton(Photon photon) {
-    float indexRatio = calculateRefractiveIndexRatio(photon);
-    vec3 normalVector = texture(uVolume0, photon.position).rgb;
-    return refract(normalize(photon.direction), normalize(normalVector), indexRatio);
+float samplePhotonAndCalculateRefractiveIndex(Photon photon) {
+    // samplenja fotona v smeri in izračun lomnega količnika tam
+    // premik fotona v trenutni smeri za natanko velikosti voksla
+    vec3 photonDirectionNextVoxel = getVectorOfCertainLength(photon.direction, 1.0f / uSize);
+    vec3 newPhotonPosition = photon.position + photonDirectionNextVoxel;
+
+    // izračun gostote in lomenga kolicnika v tem vokslu
+        // todo: pridobi pravo gostoto
+    //float mappedDensity = texture(uVolume0, newPhotonPosition).a;
+    float mappedDensity = texture(uVolume0, newPhotonPosition).r;
+    float density = calculateDensityFromRatio(mappedDensity);
+
+    float refractiveIndex = calculateRefractiveIndexFromDensity(density);
+    return refractiveIndex;
+}
+
+float calculateRefractiveAngle(float alpha, float n1, float n2) {
+    // izracun lomnega kota z lomnim zakonom
+    float stevec = sin(alpha) * n1;
+    return asin(stevec / n2);
+}
+
+// izracun novega smernega vektorja po lomu
+// todo: mozno, da bo ze zacetni cos < 0, potem resetiraj glej https://en.wikipedia.org/wiki/Snell%27s_law#Vector_form
+vec3 calculateNewDirectionVector(vec3 incomingVector, vec3 normal, float riRatio, float alpha, float beta) {
+    vec3 ratioIncoming = riRatio * incomingVector;
+    float ratioCosine = riRatio * cos(alpha) - cos(beta);
+    vec3 ratioCosineNormal = ratioCosine * normal;
+    return ratioIncoming + ratioCosineNormal;
+}
+
+vec3 refractPhoton(Photon photon, vec3 gradientVector, float n1, float n2) {
+    // handlanje negativnega cos, da je normala obratno obrnjena
+    if (dot(gradientVector * -1.0f, photon.direction) < 0.0f)
+        gradientVector = gradientVector * -1.0f;
+    float alpha = acos(dot(normalize(photon.direction), normalize(gradientVector)));
+    float beta = calculateRefractiveAngle(alpha, n1, n2);
+    return calculateNewDirectionVector(photon.direction, gradientVector, n1 / n2, alpha, beta);
+}
+
+vec3 bouncePhoton(Photon photon, vec3 gradientVector) {
+    // bounce photon
+    return reflect(photon.direction, normalize(gradientVector));
+}
+
+vec3 determineNewPhotonDirection(Photon photon) {
+    // calculation of current refractive index
+        // todo: pridobi pravo gostoto
+    //float currentMappedDensity = texture(uVolume0, photon.position).a;
+    float currentMappedDensity = texture(uVolume0, photon.position).r;
+    //vec3 gradientVector = texture(uVolume0, photon.position).rgb;
+    vec3 gradientVector = texture(uVolume0, photon.position).gba;
+    float currentDensity = calculateDensityFromRatio(currentMappedDensity);
+    float currentRI = calculateRefractiveIndexFromDensity(currentDensity);
+
+    // caluclation of next refractive index
+    float nextRI = samplePhotonAndCalculateRefractiveIndex(photon);
+
+    // determine if perform bounce or refract
+        // TODO: determine right mark for refraction or bounce
+    if (abs(currentRI - nextRI) < 50.0f) {
+        // refract
+        return refractPhoton(photon, gradientVector, currentRI, nextRI);
+    } else {
+        // bounce
+        return bouncePhoton(photon, gradientVector);
+        //return photon.direction;
+    }
+
 }
 
 vec3 randomDirection(vec2 U) {
@@ -399,6 +483,8 @@ void main() {
             // null collision
             float weightN = muNull / (uMajorant * PNull);
             photon.transmittance *= weightN;
+            // naveden odboj -> propagiraj foton in določi, ali popolni odboj ali lom
+            photon.direction = determineNewPhotonDirection(photon);
         }
         photon.previousDensity = photon.density;
     }

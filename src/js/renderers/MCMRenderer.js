@@ -186,6 +186,9 @@ _integrateFrame() {
     gl.uniform1f(program.uniforms.uRandSeed, Math.random());
     gl.uniform1f(program.uniforms.uBlur, 0);
 
+    gl.uniform1f(program.uniforms.uMinDensity, this._volumes[0].getVolumeMetadata().modalities[0].minDensity);
+    gl.uniform1f(program.uniforms.uMaxDensity, this._volumes[0].getVolumeMetadata().modalities[0].maxDensity);
+
     gl.uniform1f(program.uniforms.uAbsorptionCoefficient, this.absorptionCoefficient);
     gl.uniform1f(program.uniforms.uScatteringCoefficient, this.scatteringCoefficient);
     gl.uniform1f(program.uniforms.uScatteringBias, this.scatteringBias);
@@ -210,6 +213,8 @@ _integrateFrame() {
     gl.uniform1f(program.uniforms.uBilateralSIGMA, this.bilateralSigma);
     gl.uniform1f(program.uniforms.uBilateralBSIGMA, this.bilateralBSigma);
     gl.uniform1i(program.uniforms.uBilateralMSIZE, this.bilateralMSize);
+
+    gl.uniform1f(program.uniforms.uSize, this._volumes[0].getVolumeMetadata().modalities[0].dimensions.width);
 
     gl.drawBuffers([
         gl.COLOR_ATTACHMENT0,

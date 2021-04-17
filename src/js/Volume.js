@@ -172,4 +172,8 @@ setFilter(filter) {
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, filter);
 }
 
+getVolumeMetadata() {
+    return this._reader._metadata;
+}
+
 }
