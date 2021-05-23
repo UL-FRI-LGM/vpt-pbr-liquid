@@ -43,7 +43,9 @@ precision mediump float;
 #define M_PI 3.1415926535
 #define POLARIZABILITY_WATER_532nm 1.4864
 #define FLOOR_DENSITY 3000.0f
+#define CUBE_DENSTIY 2500.0f
 #define FLOOR_REFRACTIVE_INDEX 50000.0f
+#define CUBE_REFRACTIVE_INDEX 30000.0f
 
 @Photon
 
@@ -306,6 +308,8 @@ vec4 sampleVolumeColor(vec3 position) {
 float calculateDensityFromRatio(float ratio) {
     if (ratio == 255.0f) {
         return FLOOR_DENSITY;
+    } else if (ratio == 254.0f) {
+        return CUBE_DENSTIY;
     }
     float interval = uMaxDensity - uMinDensity;
     float percentage = ratio / 255.0f;
@@ -316,6 +320,8 @@ float calculateRefractiveIndexFromDensity(float d) {
     if (d == FLOOR_DENSITY) {
         // if density is that of floor, return very big refractive index to assure bouncing
         return FLOOR_REFRACTIVE_INDEX;
+    } else if (d == CUBE_DENSTIY) {
+        return CUBE_REFRACTIVE_INDEX;
     }
     float x = 4.0 * M_PI * d * AVOGADRO_CONSTANT * POLARIZABILITY_WATER_532nm / (3.0 * MOLAR_MASS_WATER) + 1.0;
     float x2 = x * x;
@@ -387,7 +393,7 @@ vec3 determineNewPhotonDirection(Photon photon) {
 
     // determine if perform bounce or refract
         // TODO: determine right mark for refraction or bounce
-    if (abs(currentRI - nextRI) < 50.0f) {
+    if (abs(currentRI - nextRI) < 1000.0f) {
         // refract
         return refractPhoton(photon, gradientVector, currentRI, nextRI);
     } else {
