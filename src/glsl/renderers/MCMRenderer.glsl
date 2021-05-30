@@ -340,8 +340,6 @@ float samplePhotonAndCalculateRefractiveIndex(Photon photon) {
     vec3 newPhotonPosition = photon.position + photonDirectionNextVoxel;
 
     // izračun gostote in lomenga kolicnika v tem vokslu
-        // todo: pridobi pravo gostoto
-    //float mappedDensity = texture(uVolume0, newPhotonPosition).a;
     float mappedDensity = texture(uVolume0, newPhotonPosition).r;
     float density = calculateDensityFromRatio(mappedDensity);
 
@@ -380,10 +378,7 @@ vec3 bouncePhoton(Photon photon, vec3 gradientVector) {
 
 vec3 determineNewPhotonDirection(Photon photon) {
     // calculation of current refractive index
-        // todo: pridobi pravo gostoto
-    //float currentMappedDensity = texture(uVolume0, photon.position).a;
     float currentMappedDensity = texture(uVolume0, photon.position).r;
-    //vec3 gradientVector = texture(uVolume0, photon.position).rgb;
     vec3 gradientVector = texture(uVolume0, photon.position).gba;
     float currentDensity = calculateDensityFromRatio(currentMappedDensity);
     float currentRI = calculateRefractiveIndexFromDensity(currentDensity);
@@ -397,9 +392,9 @@ vec3 determineNewPhotonDirection(Photon photon) {
         // refract
         return refractPhoton(photon, gradientVector, currentRI, nextRI);
     } else {
-        // bounce
-        return bouncePhoton(photon, gradientVector);
-        //return photon.direction;
+        // bounce (or return the same direction)
+        //return bouncePhoton(photon, gradientVector);
+        return photon.direction;
     }
 
 }
