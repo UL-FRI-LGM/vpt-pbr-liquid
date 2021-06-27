@@ -14,7 +14,8 @@ constructor(gl, volume, environmentTexture, options) {
 
     this._transferFunctions[0] = null;
 
-    this.createStaticTransferFunction('object_test.png', this._transferFunctions);
+    // temporarly have to add .png photo to build directory to work
+    this.createStaticTransferFunction('object_test_alpha.png', this._transferFunctions);
 
     this._transferFunctions[1] = WebGL.createTexture(gl, {
         width  : 2,
@@ -306,7 +307,6 @@ setTransferFunction(transferFunction, id) {
 }
 
 createStaticTransferFunction(filepath, transferFunctions) {
-    console.log(window.location.pathname);
     const image = new Image();
     
     const gl = this._gl;
