@@ -34,6 +34,7 @@ constructor(options) {
     this._$removeAllBumps       = this._$html.querySelector('[name=remove-all-bumps]')
     this._$loadButton           = this._$html.querySelector('[name="load"]');
     this._$saveButton           = this._$html.querySelector('[name="save"]');
+    this._$customTf             = this._$html.querySelector('[name="customTf"]');
 
     this._canvas = this._$html.querySelector('canvas');
     this._canvas.width = this._transferFunctionWidth;
@@ -86,6 +87,10 @@ constructor(options) {
 
     this._$saveButton.addEventListener('click', () => {
         CommonUtils.downloadJSON(this._bumps, 'TransferFunction.json');
+    });
+
+    this._$customTf.addEventListener('click', () => {
+        console.log('clicked');
     });
 }
 
