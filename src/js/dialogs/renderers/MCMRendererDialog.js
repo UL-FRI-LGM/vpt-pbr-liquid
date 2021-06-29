@@ -36,12 +36,18 @@ constructor(renderer, options) {
     this._binds.bilateralMSize.addEventListener('input', this._handleChange);
 
     this._tfwidgets = [];
+    this._customTf = [];
     for (let i = 0; i < 4; i++) {
         this._tfwidgets[i] = new TransferFunctionWidget();
         let panel = new Panel();
         panel.add(this._tfwidgets[i]);
+        this._customTf[i] = new Checkbox({
+            checked: false
+        });
+        panel.add(this._customTf[i]);
         this._binds.tftabs.add(""+i, panel);
         this._tfwidgets[i].addEventListener('change', () => {this._handleTFChange(i)});
+        this._customTf[i].addEventListener('change', () => {this._handleCustomTfChange(i)});
     }
 }
 
@@ -108,6 +114,21 @@ _handleTFChange(id) {
     this._renderer._channelContributions.z = this._tfwidgets[2]._channelContribution;
     this._renderer._channelContributions.w = this._tfwidgets[3]._channelContribution;
 
+    this._renderer.reset();
+}
+
+_handleCustomTfChange(id) {
+    var checkbox = this._customTf[id];
+    if (checkbox.isChecked()) {
+        console.log("custom transfer function");
+        this._tfwidgets[id].disableButtons(true);
+        // todo: set to custom transfer function here
+        //this.renderer.setTransferFunction();
+    } else {
+        console.log("normal transfer function");
+        this._tfwidgets[id].disableButtons(false);
+        this._renderer.setTransferFunction(this._tfwidgets[id].getTransferFunction(), id);
+    }
     this._renderer.reset();
 }
 
