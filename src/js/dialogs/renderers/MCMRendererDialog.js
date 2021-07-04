@@ -124,6 +124,9 @@ _handleCustomTfChange(id) {
         this._tfwidgets[id].disableButtons(true);
         // todo: set to custom transfer function here
         //this.renderer.setTransferFunction();
+        this._tfwidgets[id].createCustomTransferFunction();
+        this._tfwidgets[id]._removeAllBumps();
+        this._renderer.setTransferFunction(this._tfwidgets[id].getTransferFunction(), id);
     } else {
         console.log("normal transfer function");
         this._tfwidgets[id].disableButtons(false);

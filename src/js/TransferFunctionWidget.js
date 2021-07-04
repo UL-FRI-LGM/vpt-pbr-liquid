@@ -304,4 +304,37 @@ disableButtons(value) {
     this._$saveButton.disabled = value;
 }
 
+createCustomTransferFunction() {
+    //var context = this._canvas.getContext('webgl2', {
+    //    depth                 : false,
+    //    stencil               : false,
+    //    antialias             : false,
+    //    preserveDrawingBuffer : true
+    //});
+    const gl = this._gl;
+    console.log(gl);
+    var pixels = new Uint8Array(gl.drawingBufferWidth  * gl.drawingBufferHeight * 4);
+    gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    console.log(pixels);
+    var anyNonZero = pixels.filter((element, i, a) => element != 0);
+    console.log(anyNonZero.length);
+    console.log(this._canvas.style.backgroundImage);
+    //var pixels2 = this._canvas.getContext('2d').getImageData(0, 0, 256, 256).data
+    //console.log(pixels2);
+
+    console.log("image data");
+    console.log(typeof this._canvas.style.backgroundImage);
+    //var ctx = this._canvas.getContext('2d');
+    //console.log(ctx.getImageData(0,0,256,256));
+    //var tfTexture = WebGL.createTexture(gl, {
+    //    target: gl.TEXTURE_2D,
+    //    internalFormat: gl.RGBA,
+    //    format: gl.RGBA,
+    //    type: gl.UNSIGNED_BYTE,
+    //    image: this._canvas.style.backgroundImage
+    //});
+    //console.log(tfTexture);
+
+}
+
 }
