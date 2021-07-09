@@ -41,6 +41,7 @@ constructor(renderer, options) {
         this._tfwidgets[i] = new TransferFunctionWidget();
         let panel = new Panel();
         panel.add(this._tfwidgets[i]);
+        // todo: also copy UI changes HERE
         this._customTf[i] = new Checkbox({
             checked: false
         });
@@ -124,10 +125,13 @@ _handleCustomTfChange(id) {
         this._tfwidgets[id].disableButtons(true);
         // todo: set to custom transfer function here
         //this.renderer.setTransferFunction();
-        this._tfwidgets[id].createCustomTransferFunction();
-        this._tfwidgets[id]._removeAllBumps();
-        this._renderer.setTransferFunction(this._tfwidgets[id].getTransferFunction(), id);
+        
+        //this._tfwidgets[id].createCustomTransferFunction();
+        //this._tfwidgets[id]._removeAllBumps();
+        //this._renderer.setTransferFunction(this._tfwidgets[id].getTransferFunction(), id);
+        this._renderer._customTf[id] = true;
     } else {
+        this._renderer._customTf[id] = false;
         console.log("normal transfer function");
         this._tfwidgets[id].disableButtons(false);
         this._renderer.setTransferFunction(this._tfwidgets[id].getTransferFunction(), id);

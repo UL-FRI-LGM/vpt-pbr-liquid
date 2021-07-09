@@ -304,7 +304,7 @@ disableButtons(value) {
     this._$saveButton.disabled = value;
 }
 
-createCustomTransferFunction() {
+createCustomTransferFunction(volume) {
     //var context = this._canvas.getContext('webgl2', {
     //    depth                 : false,
     //    stencil               : false,
@@ -318,12 +318,27 @@ createCustomTransferFunction() {
     console.log(pixels);
     var anyNonZero = pixels.filter((element, i, a) => element != 0);
     console.log(anyNonZero.length);
-    console.log(this._canvas.style.backgroundImage);
+    //console.log(this._canvas.style.backgroundImage);
     //var pixels2 = this._canvas.getContext('2d').getImageData(0, 0, 256, 256).data
     //console.log(pixels2);
 
-    console.log("image data");
-    console.log(typeof this._canvas.style.backgroundImage);
+    //console.log("image data");
+    //console.log(typeof this._canvas.style.backgroundImage);
+//
+    //var image = new Image();
+    //image.src = this._canvas.style.backgroundImage;
+   //
+    //    console.log('Image is:');
+    //    console.log(image);
+    //    var canvas = document.createElement('canvas');
+    //    canvas.width = image.width;
+    //    canvas.height = image.height;
+    //    canvas.getContext('2d').drawImage(image, 0, 0, image.width, image.height);
+    //    var pixelData = canvas.getContext('2d').getImageData(0, 0, 256, 256).data;
+    //    console.log(pixelData);
+    
+
+    
     //var ctx = this._canvas.getContext('2d');
     //console.log(ctx.getImageData(0,0,256,256));
     //var tfTexture = WebGL.createTexture(gl, {

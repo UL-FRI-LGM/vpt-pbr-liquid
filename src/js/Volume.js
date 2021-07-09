@@ -122,10 +122,10 @@ readModality(modalityName, handlers) {
                     // console.log(this._tfAccumulatedGM);
 
                     // download image for processing
-                    var link = document.createElement('a');
-                    link.download = 'transferFunction.png';
-                    link.href = this._tfAccumulatedGM;
-                    link.click();
+                    //var link = document.createElement('a');
+                    //link.download = 'transferFunction.png';
+                    //link.href = this._tfAccumulatedGM;
+                    //link.click();
 
                     this.ready = true;
                     handlers.onLoad && handlers.onLoad();
@@ -180,6 +180,10 @@ setFilter(filter) {
 
 getVolumeMetadata() {
     return this._reader._metadata;
+}
+
+getTfArray() {
+    return this._tfArray;
 }
 
 }
