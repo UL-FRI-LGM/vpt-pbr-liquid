@@ -2,6 +2,7 @@
 
 // #include ../WebGL.js
 // #include AbstractRenderer.js
+// #include ..\utils\CustomTransferFunctionUtils.js
 
 class MCMRenderer extends AbstractRenderer {
 
@@ -95,7 +96,6 @@ destroy() {
 }
 
 _changeCustomTf() {
-    console.log(this._customTf);
     this._customTf.forEach((value, index) => {
         if (value === true) {
             console.log('create custom tf');
@@ -105,20 +105,10 @@ _changeCustomTf() {
             console.log('revert tf');
         }
     });
-    this._reset();
+    this.reset();
 }
 
 _resetFrame() {
-    //console.log(this._customTf);
-    //this._customTf.forEach((value, index) => {
-    //    if (value === true) {
-    //        console.log('create custom tf');
-    //        this.createCustomTransferFunction(index);
-    //    } else {
-    //        // todo: revert back to default TF
-    //        console.log('revert tf');
-    //    }
-    //});
     const gl = this._gl;
 
     const program = this._programs.reset;

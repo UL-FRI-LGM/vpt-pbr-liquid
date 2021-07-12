@@ -41,10 +41,7 @@ constructor(renderer, options) {
         this._tfwidgets[i] = new TransferFunctionWidget();
         let panel = new Panel();
         panel.add(this._tfwidgets[i]);
-        // todo: also copy UI changes HERE
-        this._customTf[i] = new Checkbox({
-            checked: false
-        });
+        this._customTf[i] = this._createUIElementsForCustomTf(i);
         panel.add(this._customTf[i]);
         this._binds.tftabs.add(""+i, panel);
         this._tfwidgets[i].addEventListener('change', () => {this._handleTFChange(i)});
@@ -118,8 +115,20 @@ _handleTFChange(id) {
     this._renderer.reset();
 }
 
+_createUIElementsForCustomTf(id) {
+    var field = new Field({
+        label: "Custom Transfer Function:"
+    });
+    var checkbox = new Checkbox({
+        checked: false
+    });
+    checkbox.addEventListener('change', () => {this._handleCustomTfChange(id)});
+    field.add(checkbox);
+    return field;
+}
+
 _handleCustomTfChange(id) {
-    var checkbox = this._customTf[id];
+    var checkbox = this._customTf[id]._content;
     if (checkbox.isChecked()) {
         console.log("custom transfer function");
         this._tfwidgets[id].disableButtons(true);
@@ -136,7 +145,7 @@ _handleCustomTfChange(id) {
         this._tfwidgets[id].disableButtons(false);
         this._renderer.setTransferFunction(this._tfwidgets[id].getTransferFunction(), id);
     }
-    this._renderer.reset();
+    this._renderer._changeCustomTf();
 }
 
 _handleScaleChange(dimensions) {

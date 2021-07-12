@@ -3,19 +3,19 @@
 class ColorInterpolationUtils {
 
     static getColorRatios(pixel, peaks) {
-        colorRatios = Array(peaks.length).fill(1);
+        let colorRatios = Array(peaks.length).fill(1);
         peaks.forEach((peak1, i1) => {
             peaks.forEach((peak2, i2) => {
                 if (i1 == i2)
                     return;
-                d = this.calculateProjectionDistance(peak1, peak2, pixel);
-                colorRatios[index1] *= this.limit(d);
+                let d = this.calculateProjectionDistance(peak1, peak2, pixel);
+                colorRatios[i1] *= this.limit(d);
             });
         });
-        totalRatiosSum = 0;
+        let totalRatiosSum = 0;
         colorRatios.forEach(ratio => totalRatiosSum += ratio);
         colorRatios.forEach(ratio => ratio /= totalRatiosSum);
-        color = this.getColorMix(peaks, colorRatios);
+        let color = this.getColorMix(peaks, colorRatios);
         return color;
     }
 
