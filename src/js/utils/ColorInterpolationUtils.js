@@ -38,7 +38,9 @@ class ColorInterpolationUtils {
     }
 
     static getColorMix(peaks, colorRatios) {
-        let r, g, b = 0;
+        let r = 0;
+        let g = 0;
+        let b = 0;
         peaks.forEach((peak, index) => {
             r += peak.color[0] * colorRatios[index];
             g += peak.color[1] * colorRatios[index];

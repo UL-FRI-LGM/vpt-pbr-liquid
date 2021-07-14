@@ -10,4 +10,8 @@ class Pixel {
         this.grayscale = grayscale;
     }
 
+    getColor() {
+        return this.color;
+    }
+
 }

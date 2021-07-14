@@ -15,7 +15,7 @@ constructor(gl, volume, environmentTexture, options) {
 
     this._transferFunctions = [];
 
-    this._transferFunctions[0] = this._transferFunctions[1] = WebGL.createTexture(gl, {
+    this._transferFunctions[0] = WebGL.createTexture(gl, {
         width  : 2,
         height : 1,
         data   : new Uint8Array([255, 0, 0, 0, 255, 0, 0, 255]),
@@ -24,9 +24,6 @@ constructor(gl, volume, environmentTexture, options) {
         min    : gl.LINEAR,
         mag    : gl.LINEAR
     });
-
-    // temporarly have to add .png photo to build directory to work
-   // this.createStaticTransferFunction('object_test_alpha.png', this._transferFunctions);
 
     this._transferFunctions[1] = WebGL.createTexture(gl, {
         width  : 2,
@@ -96,16 +93,25 @@ destroy() {
 }
 
 _changeCustomTf() {
+    let customTfs = [];
     this._customTf.forEach((value, index) => {
         if (value === true) {
             console.log('create custom tf');
-            this.createCustomTransferFunction(index);
+            let customTf = this.createCustomTransferFunction(index);
+            customTfs.push(customTf);
+            //console.log(customTfs);
         } else {
             // todo: revert back to default TF
             console.log('revert tf');
+            let tfArray = [];
+            if (this._volumes[index])
+                tfArray = this._volumes[index].getTfArray();
+            customTfs.push(tfArray);
         }
     });
     this.reset();
+    //console.log(customTfs);
+    return customTfs;
 }
 
 _resetFrame() {
@@ -324,6 +330,8 @@ _getAccumulationBufferSpec() {
 }
 
 setTransferFunction(transferFunction, id) {
+    console.log(transferFunction);
+    console.log(this._transferFunctions[id]);
     const gl = this._gl;
     gl.bindTexture(gl.TEXTURE_2D, this._transferFunctions[id]);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, transferFunction);
@@ -353,10 +361,9 @@ createStaticTransferFunction(filepath, transferFunctions) {
 }
 
 createCustomTransferFunction(index) {
-    console.log('in functino1');
     let tfArray = this._volumes[index].getTfArray();
-    console.log('array');
-    CustomTransferFunctionUtils.createCustomTf(tfArray);
+    let customTf = CustomTransferFunctionUtils.createCustomTf(tfArray);
+    return customTf;
 }
 
 

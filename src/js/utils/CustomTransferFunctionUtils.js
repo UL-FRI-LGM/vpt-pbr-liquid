@@ -7,15 +7,21 @@ class CustomTransferFunctionUtils {
     static limitForPeaks = 19;
 
     static createCustomTf(tfArray) {
-        console.log('in 2');
         let grayscaledPixels = this.convertToGrayscale(tfArray);
+
         let coloredPixels = this.findAndDetectPeaks(grayscaledPixels);
 
-        console.log('finished');
-        var link = document.createElement('a');
-        link.download = 'transferFunction.png';
-        link.href = coloredPixels;
-        link.click();
+        let colors = coloredPixels.map(pixel => pixel.getColor());
+
+        let customTf = new Array(colors.length * 4);
+        for (let i = 0; i < colors.length; i++) {
+            customTf[4 * i] = colors[i][0];
+            customTf[4 * i + 1] = colors[i][1];
+            customTf[4 * i + 2] = colors[i][2];
+            customTf[4 * i + 3] = colors[i][3];
+        }
+
+        return customTf;
     }
 
     static convertToGrayscale(pixelData) {
@@ -45,8 +51,6 @@ class CustomTransferFunctionUtils {
 
     static findAndDetectPeaks(data) {
         let peaks = this.findPeaks(data);
-        console.log('number of peaks:');
-        console.log(peaks.length);
         this.colorPeaksAndPixels(data, peaks, 0.1, 0.9);
         return data;
     }
@@ -98,6 +102,9 @@ class CustomTransferFunctionUtils {
             else if (pixel.x === 254)
                 // cube (green)
                 pixel.color = [0, 255, 0, 255];
+            else if (pixel.x === 255) 
+                // floor (yellow)
+                pixel.color = [255, 255, 0, 255];
             else if (pixel.x === 0 || pixel.grayscale === 0)
                 // air (black with no alpha)
                 pixel.color = [255, 255, 255, 0];
