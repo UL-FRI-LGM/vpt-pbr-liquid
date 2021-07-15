@@ -147,6 +147,11 @@ _handleCustomTfChange(id) {
     }
     let tfArrays = this._renderer._changeCustomTf();
     tfArrays.forEach((tfArray, index) => {
+        if (tfArray.length === 0) {
+            // empty array, meaning no volume is selected
+            return;
+        }
+
         console.log("in foreach");
         const imgData = new ImageData(Uint8ClampedArray.from(tfArray), 256, 256);
         const canv = document.createElement('canvas');
@@ -156,14 +161,7 @@ _handleCustomTfChange(id) {
         ctx.putImageData(imgData, 0, 0);
         let imgDataUrl = canv.toDataURL();
 
-        let newTf = WebGL.createTexture(this._renderer._gl, {
-            texture: this._renderer._transferFunctions[index],
-            data: tfArray,
-            width: 2,
-            height: 1
-        });
-
-        this._renderer.setTransferFunction(newTf, index);
+        this._renderer.setTransferFunction(canv, index);
 
         console.log(imgDataUrl);
         this._tfwidgets[index]._canvas.style.backgroundImage = "none";

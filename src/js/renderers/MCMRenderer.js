@@ -330,8 +330,6 @@ _getAccumulationBufferSpec() {
 }
 
 setTransferFunction(transferFunction, id) {
-    console.log(transferFunction);
-    console.log(this._transferFunctions[id]);
     const gl = this._gl;
     gl.bindTexture(gl.TEXTURE_2D, this._transferFunctions[id]);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, transferFunction);
