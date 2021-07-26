@@ -130,20 +130,11 @@ _createUIElementsForCustomTf(id) {
 _handleCustomTfChange(id) {
     var checkbox = this._customTf[id]._content;
     if (checkbox.isChecked()) {
-        console.log("custom transfer function");
         this._renderer._customTf[id] = true;
         this._tfwidgets[id].disableButtons(true);
-        // todo: set to custom transfer function here
-        
-        //this._tfwidgets[id].createCustomTransferFunction();
-        //this._tfwidgets[id]._removeAllBumps();
-        //this._renderer.setTransferFunction(this._tfwidgets[id].getTransferFunction(), id);
-        //this.renderer.setTransferFunction();
     } else {
-        console.log("normal transfer function");
         this._renderer._customTf[id] = false;
         this._tfwidgets[id].disableButtons(false);
-        //this._renderer.setTransferFunction(this._tfwidgets[id].getTransferFunction(), id);
     }
     let tfArrays = this._renderer._changeCustomTf();
     tfArrays.forEach((tfArray, index) => {
@@ -152,7 +143,6 @@ _handleCustomTfChange(id) {
             return;
         }
 
-        console.log("in foreach");
         const imgData = new ImageData(Uint8ClampedArray.from(tfArray), 256, 256);
         const canv = document.createElement('canvas');
         canv.width = 256;
@@ -163,7 +153,6 @@ _handleCustomTfChange(id) {
 
         this._renderer.setTransferFunction(canv, index);
 
-        console.log(imgDataUrl);
         this._tfwidgets[index]._canvas.style.backgroundImage = "none";
         this._tfwidgets[index]._canvas.style.backgroundImage = 'url('+imgDataUrl+')';
     });

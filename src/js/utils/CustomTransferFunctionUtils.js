@@ -4,7 +4,7 @@
 
 class CustomTransferFunctionUtils {
 
-    static limitForPeaks = 19;
+    static limitForPeaks = 30;
 
     static createCustomTf(tfArray) {
         let grayscaledPixels = this.convertToGrayscale(tfArray);
@@ -51,6 +51,8 @@ class CustomTransferFunctionUtils {
 
     static findAndDetectPeaks(data) {
         let peaks = this.findPeaks(data);
+        console.log('found peaks:');
+        console.log(peaks.length);
         this.colorPeaksAndPixels(data, peaks, 0.1, 0.9);
         return data;
     }

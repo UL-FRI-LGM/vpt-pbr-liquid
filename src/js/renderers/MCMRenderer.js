@@ -96,21 +96,18 @@ _changeCustomTf() {
     let customTfs = [];
     this._customTf.forEach((value, index) => {
         if (value === true) {
-            console.log('create custom tf');
-            let customTf = this.createCustomTransferFunction(index);
-            customTfs.push(customTf);
-            //console.log(customTfs);
+            if (this._volumes[index]) {
+                let customTf = this.createCustomTransferFunction(index);
+                customTfs.push(customTf);
+            }
         } else {
-            // todo: revert back to default TF
-            console.log('revert tf');
             let tfArray = [];
-            if (this._volumes[index])
+            if (this._volumes[index]) 
                 tfArray = this._volumes[index].getTfArray();
             customTfs.push(tfArray);
         }
     });
     this.reset();
-    //console.log(customTfs);
     return customTfs;
 }
 
@@ -334,28 +331,6 @@ setTransferFunction(transferFunction, id) {
     gl.bindTexture(gl.TEXTURE_2D, this._transferFunctions[id]);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, transferFunction);
     gl.bindTexture(gl.TEXTURE_2D, null);
-}
-
-createStaticTransferFunction(filepath, transferFunctions) {
-    const image = new Image();
-    
-    const gl = this._gl;
-    console.log('demo loaded');
-    
-    image.onload = function() {
-        console.log('loaded');
-        const texture = WebGL.createTexture(gl, {
-            width  : 2,
-            height : 1,
-            image  : image,
-            wrapS  : gl.CLAMP_TO_EDGE,
-            wrapT  : gl.CLAMP_TO_EDGE,
-            min    : gl.LINEAR,
-            mag    : gl.LINEAR
-        });
-        transferFunctions[0] = texture;
-    }
-    image.src = filepath;
 }
 
 createCustomTransferFunction(index) {

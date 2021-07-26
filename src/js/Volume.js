@@ -119,13 +119,6 @@ readModality(modalityName, handlers) {
                     const ctx = canv.getContext('2d');
                     ctx.putImageData(imgData, 0, 0);
                     this._tfAccumulatedGM = canv.toDataURL();
-                    // console.log(this._tfAccumulatedGM);
-
-                    // download image for processing
-                    //var link = document.createElement('a');
-                    //link.download = 'transferFunction.png';
-                    //link.href = this._tfAccumulatedGM;
-                    //link.click();
 
                     this.ready = true;
                     handlers.onLoad && handlers.onLoad();
