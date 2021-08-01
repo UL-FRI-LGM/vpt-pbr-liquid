@@ -39,9 +39,9 @@ precision mediump float;
 #define MSIZE 255
 
 #define AVOGADRO_CONSTANT 6.02214179 * pow(10.0f, 23.0f)
-#define MOLAR_MASS_WATER 18.01528
+#define MOLAR_MASS_WATER 18.01528 * pow(10.0f, -3.0f)
 #define M_PI 3.1415926535
-#define POLARIZABILITY_WATER_532nm 1.4864
+#define POLARIZABILITY_WATER_532nm 1.4864 * pow(10.0f, 30.0f)
 #define FLOOR_DENSITY 3000.0f
 #define CUBE_DENSTIY 2500.0f
 #define FLOOR_REFRACTIVE_INDEX 50000.0f
@@ -323,9 +323,8 @@ float calculateRefractiveIndexFromDensity(float d) {
     } else if (d == CUBE_DENSTIY) {
         return CUBE_REFRACTIVE_INDEX;
     }
-    float x = 4.0 * M_PI * d * AVOGADRO_CONSTANT * POLARIZABILITY_WATER_532nm / (3.0 * MOLAR_MASS_WATER) + 1.0;
-    float x2 = x * x;
-    return pow(x2, 0.33f);
+    float x = (4.0f * M_PI * d * AVOGADRO_CONSTANT * POLARIZABILITY_WATER_532nm / (3.0f * MOLAR_MASS_WATER)) + 1.0f;
+    return pow(x, 0.66f);
 }
 
 vec3 getVectorOfCertainLength(vec3 vector, float desiredLength) {
