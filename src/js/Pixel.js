@@ -8,10 +8,11 @@ class Pixel {
         this.color = [r, g, b, a];
         this.peak = false;
         this.grayscale = grayscale;
+        this.center = null;
     }
 
-    getColor() {
-        return this.color;
+    equals(p) {
+        return this.x === p.x && this.y === p.y;
     }
 
 }

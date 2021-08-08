@@ -132,6 +132,7 @@ _handleCustomTfChange(id) {
     if (checkbox.isChecked()) {
         this._renderer._customTf[id] = true;
         this._tfwidgets[id].disableButtons(true);
+        this._tfwidgets[id]._removeAllBumps();
     } else {
         this._renderer._customTf[id] = false;
         this._tfwidgets[id].disableButtons(false);

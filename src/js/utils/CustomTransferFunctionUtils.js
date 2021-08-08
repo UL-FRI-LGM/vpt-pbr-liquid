@@ -1,17 +1,18 @@
 // #package js/main
 // #include ../Pixel.js
 // #include Colormap.js
+// #include KMeansImplementation.js
 
 class CustomTransferFunctionUtils {
 
-    static limitForPeaks = 30;
+    //static limitForPeaks = 30;
 
     static createCustomTf(tfArray) {
         let grayscaledPixels = this.convertToGrayscale(tfArray);
 
         let coloredPixels = this.findAndDetectPeaks(grayscaledPixels);
 
-        let colors = coloredPixels.map(pixel => pixel.getColor());
+        let colors = coloredPixels.map(pixel => pixel.color);
 
         let customTf = new Array(colors.length * 4);
         for (let i = 0; i < colors.length; i++) {
@@ -57,36 +58,40 @@ class CustomTransferFunctionUtils {
         return data;
     }
 
+    //static findPeaks(data) {
+    //    let peaks = [];
+    //    data.forEach(pixel => {
+    //        if (pixel.x === 0 || pixel.x === 254 || pixel.x === 255)
+    //            return;
+    //        if (this.isPeak(pixel, data)) {
+    //            peaks.push(pixel);
+    //            pixel.peak = true;
+    //        }
+    //    });
+    //    return peaks;
+    //}
+
     static findPeaks(data) {
-        let peaks = [];
-        data.forEach(pixel => {
-            if (pixel.x === 0 || pixel.x === 254 || pixel.x === 255)
-                return;
-            if (this.isPeak(pixel, data)) {
-                peaks.push(pixel);
-                pixel.peak = true;
-            }
-        });
-        return peaks;
+        return KMeansImplementation.findPeaks(data, 5);
     }
 
-    static isPeak(pixel, data) {
-        let length = Math.sqrt(data.length);
-        // look in all 4 directions and find out if it is a peak
-        // buttom
-        if (pixel.y < length - 1 && pixel.grayscale <= (this.getDataAtIndex(data, pixel.x, pixel.y + 1).grayscale + this.limitForPeaks))
-            return false;
-        // right
-        if (pixel.x < length - 1 && pixel.grayscale <= (this.getDataAtIndex(data, pixel.x + 1, pixel.y).grayscale + this.limitForPeaks))
-            return false;
-        // top
-        if (pixel.y > 1 && pixel.grayscale <= (this.getDataAtIndex(data, pixel.x, pixel.y - 1).grayscale + this.limitForPeaks))
-            return false;
-        // left
-        if (pixel.x > 1 && pixel.grayscale <= (this.getDataAtIndex(data, pixel.x - 1, pixel.y).grayscale + this.limitForPeaks))
-            return false;
-        return true;
-    }
+    //static isPeak(pixel, data) {
+    //    let length = Math.sqrt(data.length);
+    //    // look in all 4 directions and find out if it is a peak
+    //    // buttom
+    //    if (pixel.y < length - 1 && pixel.grayscale <= (this.getDataAtIndex(data, pixel.x, pixel.y + 1).grayscale + this.limitForPeaks))
+    //        return false;
+    //    // right
+    //    if (pixel.x < length - 1 && pixel.grayscale <= (this.getDataAtIndex(data, pixel.x + 1, pixel.y).grayscale + this.limitForPeaks))
+    //        return false;
+    //    // top
+    //    if (pixel.y > 1 && pixel.grayscale <= (this.getDataAtIndex(data, pixel.x, pixel.y - 1).grayscale + this.limitForPeaks))
+    //        return false;
+    //    // left
+    //    if (pixel.x > 1 && pixel.grayscale <= (this.getDataAtIndex(data, pixel.x - 1, pixel.y).grayscale + this.limitForPeaks))
+    //        return false;
+    //    return true;
+    //}
 
     static getDataAtIndex(data, x, y) {
         return data[y * 256 + x];
