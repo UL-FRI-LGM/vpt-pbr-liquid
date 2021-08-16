@@ -441,7 +441,7 @@ function computeGradientForward(volumeData, volumeDimensions, idx) {
 function computeGradient(volumeData, dimensions) {
     console.error('Computing gradient');
 
-    const gradientData = Buffer.allocUnsafe(totalCount(dimensions) * 4);
+    const gradientData = Buffer.allocUnsafe(totalCount(dimensions) * 3);
 
     for (let k = 0; k < dimensions.depth; k++) {
         for (let j = 0; j < dimensions.height; j++) {
@@ -467,15 +467,9 @@ function computeGradient(volumeData, dimensions) {
                     gradient.dx = Math.min(Math.max(Math.round(gradient.dx * 255), 0), 255);
                     gradient.dy = Math.min(Math.max(Math.round(gradient.dy * 255), 0), 255);
                     gradient.dz = Math.min(Math.max(Math.round(gradient.dz * 255), 0), 255);
-                    let volumeIndex = index({
-                        x : i,
-                        y : j,
-                        z : k
-                    }, dimensions);
-                    gradientData[centerIdx * 4 + 0] = gradient.dx;
-                    gradientData[centerIdx * 4 + 1] = gradient.dy;
-                    gradientData[centerIdx * 4 + 2] = gradient.dz;
-                    gradientData[centerIdx * 4 + 3] = volumeData[volumeIndex];
+                    gradientData[centerIdx * 3 + 0] = gradient.dx;
+                    gradientData[centerIdx * 3 + 1] = gradient.dy;
+                    gradientData[centerIdx * 3 + 2] = gradient.dz;
                 }
             }
         }
@@ -539,7 +533,7 @@ function computeOutputData(volumeData, modality) {
         const gradientData = computeGradient(volumeData, modality.dimensions);
         return combineData([
             { data: volumeData,   bytes: 1 },
-            { data: gradientData, bytes: 4 },
+            { data: gradientData, bytes: 3 },
         ]);
     }
 

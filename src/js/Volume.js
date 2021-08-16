@@ -87,8 +87,12 @@ readModality(modalityName, handlers) {
 
                 // Accumulate gradient magnitude
                 const typedData = this._typize(data, type);
-                for (let i = 0; i < typedData.length; i+=2) {
-                    this._tfArray[typedData[i+1] * 256 + typedData[i]]++;
+                for (let i = 0; i < typedData.length; i+=4) {
+                    let x = typedData[i + 1];
+                    let y = typedData[i + 2];
+                    let z = typedData[i + 3];
+                    let magnitude = Math.sqrt(x * x + y * y + z * z);
+                    this._tfArray[magnitude * 256 + typedData[i]]++;
                 }
 
                 gl.bindTexture(gl.TEXTURE_3D, this._texture);

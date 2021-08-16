@@ -10,5 +10,5 @@ struct Photon {
     uint bounces;
     uint samples;
     float density;
-    float previousDensity;
+    vec3 gradient;
 };

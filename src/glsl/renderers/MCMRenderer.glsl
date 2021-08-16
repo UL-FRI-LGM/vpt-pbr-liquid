@@ -38,14 +38,16 @@ precision mediump float;
 
 #define MSIZE 255
 
-#define AVOGADRO_CONSTANT 6.02214179 * pow(10.0f, 23.0f)
-#define MOLAR_MASS_WATER 18.01528 * pow(10.0f, -3.0f)
+#define AVOGADRO_CONSTANT 6.02214179 * pow(10.0, 23.0)
+#define MOLAR_MASS_WATER 18.01528 * pow(10.0, -3.0)
 #define M_PI 3.1415926535
-#define POLARIZABILITY_WATER_532nm 1.4864 * pow(10.0f, 30.0f)
-#define FLOOR_DENSITY 3000.0f
-#define CUBE_DENSTIY 2500.0f
-#define FLOOR_REFRACTIVE_INDEX 50000.0f
-#define CUBE_REFRACTIVE_INDEX 30000.0f
+#define POLARIZABILITY_WATER_532nm 1.4864 * pow(10.0, 30.0)
+#define FLOOR_DENSITY 3000.0
+#define CUBE_DENSTIY 2500.0
+#define AIR_DENSITY 1225.0
+#define FLOOR_REFRACTIVE_INDEX 50000.0
+#define CUBE_REFRACTIVE_INDEX 30000.0
+#define AIR_REFRACTIVE_INDEX 1.0003
 
 @Photon
 
@@ -192,7 +194,10 @@ vec2 bilateralFiltering3D_2(vec3 position, vec2 volumeSample) {
             for (int k=-kSize; k <= kSize; ++k) {
                 // voxel values in the 2D neighborhood
                 vec3 coord = position.xyz + vec3(float(i), float(j), float(k));
-                cc = texture(uVolume0, coord).rg;
+
+                vec4 textureSample = texture(uVolume0, coord);
+                cc = vec2(textureSample.r, length(textureSample.gba));
+                //cc = texture(uVolume0, coord).rg;
 
                 // compute both the gaussian smoothed and bilateral
                 gfactor = kernel[kSize+k]*kernel[kSize+j]*kernel[kSize+i];
@@ -227,7 +232,9 @@ vec4 sampleEnvironmentMap(vec3 d) {
 vec4 sampleVolumeColor(vec3 position) {
     vec4 channelContribs = uChannelContributions / max(max(max(uChannelContributions.x, uChannelContributions.y), uChannelContributions.z), uChannelContributions.w);
 
-    vec2 volumeSample0 = texture(uVolume0, position).rg ;
+    //vec2 volumeSample0 = texture(uVolume0, position).rg ;
+    vec4 volumeSample = texture(uVolume0, position);
+    vec2 volumeSample0 = vec2(volumeSample.r, length(volumeSample.gba));
     vec4 transferSample0 = texture(uTransferFunction0, volumeSample0) * channelContribs.x;
     vec4 transferSample1 = vec4(0);
     vec4 transferSample2 = vec4(0);
@@ -306,13 +313,15 @@ vec4 sampleVolumeColor(vec3 position) {
 
 // calculate actual density value from .raw file
 float calculateDensityFromRatio(float ratio) {
-    if (ratio == 255.0f) {
+    if (ratio >= 255.0) {
         return FLOOR_DENSITY;
-    } else if (ratio == 254.0f) {
+    } else if (ratio >= 254.0) {
         return CUBE_DENSTIY;
+    } else if (ratio == 0.0) {
+        return AIR_DENSITY;
     }
     float interval = uMaxDensity - uMinDensity;
-    float percentage = ratio / 255.0f;
+    float percentage = ratio / 255.0;
     return (percentage * interval) + uMinDensity;
 }
 
@@ -322,9 +331,11 @@ float calculateRefractiveIndexFromDensity(float d) {
         return FLOOR_REFRACTIVE_INDEX;
     } else if (d == CUBE_DENSTIY) {
         return CUBE_REFRACTIVE_INDEX;
+    } else if (d == AIR_DENSITY) {
+        return AIR_REFRACTIVE_INDEX;
     }
-    float x = (4.0f * M_PI * d * AVOGADRO_CONSTANT * POLARIZABILITY_WATER_532nm / (3.0f * MOLAR_MASS_WATER)) + 1.0f;
-    return pow(x, 0.66f);
+    float x = (4.0 * M_PI * d * AVOGADRO_CONSTANT * POLARIZABILITY_WATER_532nm / (3.0 * MOLAR_MASS_WATER)) + 1.0;
+    return pow(x, 0.66);
 }
 
 vec3 getVectorOfCertainLength(vec3 vector, float desiredLength) {
@@ -335,7 +346,7 @@ vec3 getVectorOfCertainLength(vec3 vector, float desiredLength) {
 float samplePhotonAndCalculateRefractiveIndex(Photon photon) {
     // samplenja fotona v smeri in izračun lomnega količnika tam
     // premik fotona v trenutni smeri za natanko velikosti voksla
-    vec3 photonDirectionNextVoxel = getVectorOfCertainLength(photon.direction, 1.0f / uSize);
+    vec3 photonDirectionNextVoxel = getVectorOfCertainLength(photon.direction, 1.0 / uSize);
     vec3 newPhotonPosition = photon.position + photonDirectionNextVoxel;
 
     // izračun gostote in lomenga kolicnika v tem vokslu
@@ -361,13 +372,17 @@ vec3 calculateNewDirectionVector(vec3 incomingVector, vec3 normal, float riRatio
     return ratioIncoming + ratioCosineNormal;
 }
 
-vec3 refractPhoton(Photon photon, vec3 gradientVector, float n1, float n2) {
+vec3 refractPhoton(Photon photon, float n1, float n2) {
+    vec3 I = normalize(photon.direction);
+    vec3 N = normalize(photon.gradient);
+    float eta = n1 / n2;
+    return refract(I, N, eta);
     // handlanje negativnega cos, da je normala obratno obrnjena
-    if (dot(gradientVector * -1.0f, photon.direction) < 0.0f)
-        gradientVector = gradientVector * -1.0f;
-    float alpha = acos(dot(normalize(photon.direction), normalize(gradientVector)));
-    float beta = calculateRefractiveAngle(alpha, n1, n2);
-    return calculateNewDirectionVector(photon.direction, gradientVector, n1 / n2, alpha, beta);
+    //if (dot(gradientVector * -1.0f, photon.direction) < 0.0f)
+    //    gradientVector = gradientVector * -1.0f;
+    //float alpha = acos(dot(normalize(photon.direction), normalize(gradientVector)));
+    //float beta = calculateRefractiveAngle(alpha, n1, n2);
+    //return calculateNewDirectionVector(photon.direction, gradientVector, n1 / n2, alpha, beta);
 }
 
 vec3 bouncePhoton(Photon photon, vec3 gradientVector) {
@@ -375,27 +390,20 @@ vec3 bouncePhoton(Photon photon, vec3 gradientVector) {
     return reflect(photon.direction, normalize(gradientVector));
 }
 
-vec3 determineNewPhotonDirection(Photon photon) {
+vec4 determineNewPhotonDirection(Photon photon) {
     // calculation of current refractive index
-    float currentMappedDensity = texture(uVolume0, photon.position).r;
-    vec3 gradientVector = texture(uVolume0, photon.position).gba;
-    float currentDensity = calculateDensityFromRatio(currentMappedDensity);
+    float currentDensity = calculateDensityFromRatio(photon.density);
     float currentRI = calculateRefractiveIndexFromDensity(currentDensity);
 
     // caluclation of next refractive index
     float nextRI = samplePhotonAndCalculateRefractiveIndex(photon);
 
-    // determine if perform bounce or refract
-        // TODO: determine right mark for refraction or bounce
-    if (abs(currentRI - nextRI) < 1000.0f) {
-        // refract
-        return refractPhoton(photon, gradientVector, currentRI, nextRI);
-    } else {
-        // bounce (or return the same direction)
-        //return bouncePhoton(photon, gradientVector);
-        return photon.direction;
+    // determine if perform refract or not
+    if ((currentRI == FLOOR_REFRACTIVE_INDEX && nextRI == FLOOR_REFRACTIVE_INDEX) || (currentRI == CUBE_REFRACTIVE_INDEX && nextRI == CUBE_REFRACTIVE_INDEX) || 
+        (currentRI == AIR_REFRACTIVE_INDEX && nextRI == AIR_REFRACTIVE_INDEX)) {
+        return vec4(photon.direction, currentDensity);
     }
-
+    return vec4(refractPhoton(photon, currentRI, nextRI), currentDensity);
 }
 
 vec3 randomDirection(vec2 U) {
@@ -427,9 +435,9 @@ void main() {
     vec2 mappedPosition = vPosition * 0.5 + 0.5;
     photon.position = texture(uPosition, mappedPosition).xyz;
     vec4 directionAndBounces = texture(uDirection, mappedPosition);
-    float density = texture(uVolume0, photon.position).w;
-    photon.density = density;
-    photon.previousDensity = density;
+    vec4 volumeData = texture(uVolume0, photon.position);
+    photon.density = volumeData.r;
+    photon.gradient = volumeData.gba;
     photon.direction = directionAndBounces.xyz;
     photon.bounces = uint(directionAndBounces.w + 0.5);
     photon.transmittance = texture(uTransmittance, mappedPosition).rgb;
@@ -437,22 +445,28 @@ void main() {
     photon.radiance = radianceAndSamples.rgb;
     photon.samples = uint(radianceAndSamples.w + 0.5);
 
+    float currentAbsorptionCoefficient = uAbsorptionCoefficient;
+    float currentScatteringCoefficient = uScatteringCoefficient;
+    float currentMajorant = uMajorant;
+
     vec2 r = rand(vPosition * uRandSeed);
     for (uint i = 0u; i < uSteps; i++) {
         r = rand(r);
-        float t = -log(r.x) / uMajorant;
+        float t = -log(r.x) / currentMajorant;
         photon.position += t * photon.direction;
 
         vec4 volumeSample = sampleVolumeColor(photon.position);
-        float muAbsorption = volumeSample.a * uAbsorptionCoefficient;
-        float muScattering = volumeSample.a * uScatteringCoefficient;
-        float muNull = uMajorant - muAbsorption - muScattering;
+        float muAbsorption = volumeSample.a * currentAbsorptionCoefficient;
+        float muScattering = volumeSample.a * currentScatteringCoefficient;
+        float muNull = currentMajorant - muAbsorption - muScattering;
         float muMajorant = muAbsorption + muScattering + abs(muNull);
         float PNull = abs(muNull) / muMajorant;
         float PAbsorption = muAbsorption / muMajorant;
         float PScattering = muScattering / muMajorant;
 
-        photon.density = length(texture(uVolume0, photon.position).rgb);
+        volumeData = texture(uVolume0, photon.position);
+        photon.density = volumeData.r;
+        photon.gradient = volumeData.gba;
 
         // if (any(greaterThan(photon.position, vec3(1))) || any(lessThan(photon.position, vec3(0)))) {
         if (any(greaterThan(photon.position, uMaxCutPlaneValues)) || any(lessThan(photon.position, uMinCutPlaneValues))) {
@@ -466,27 +480,35 @@ void main() {
             resetPhoton(r, photon);
         } else if (photon.bounces >= uMaxBounces) {
             // max bounces achieved -> only estimate transmittance
-            float weightAS = (muAbsorption + muScattering) / uMajorant;
+            float weightAS = (muAbsorption + muScattering) / currentMajorant;
             photon.transmittance *= 1.0 - weightAS;
         } else if (r.y < PAbsorption) {
             // absorption
-            float weightA = muAbsorption / (uMajorant * PAbsorption);
+            float weightA = muAbsorption / (currentMajorant * PAbsorption);
             photon.transmittance *= 1.0 - weightA;
         } else if (r.y < PAbsorption + PScattering) {
             // scattering
             r = rand(r);
-            float weightS = muScattering / (uMajorant * PScattering);
+            float weightS = muScattering / (currentMajorant * PScattering);
             photon.transmittance *= volumeSample.rgb * weightS;
+            vec4 newPhotonDirection = determineNewPhotonDirection(photon);
+            photon.direction = newPhotonDirection.rgb;
+            if (newPhotonDirection.a >= CUBE_DENSTIY) {
+                currentAbsorptionCoefficient = uAbsorptionCoefficient * 100.0;
+                currentMajorant = uMajorant * 100.0;
+                currentScatteringCoefficient = uScatteringCoefficient * 100.0;
+            } else {
+                currentAbsorptionCoefficient = uAbsorptionCoefficient;
+                currentMajorant = uMajorant;
+                currentScatteringCoefficient = uScatteringCoefficient;
+            }
             photon.direction = sampleHenyeyGreenstein(uScatteringBias, r, photon.direction);
             photon.bounces++;
         } else {
             // null collision
-            float weightN = muNull / (uMajorant * PNull);
+            float weightN = muNull / (currentMajorant * PNull);
             photon.transmittance *= weightN;
-            // naveden odboj -> propagiraj foton in določi, ali popolni odboj ali lom
-            photon.direction = determineNewPhotonDirection(photon);
         }
-        photon.previousDensity = photon.density;
     }
 
     oPosition = vec4(photon.position, 0);
