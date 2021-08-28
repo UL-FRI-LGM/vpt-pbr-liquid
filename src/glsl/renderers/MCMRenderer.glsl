@@ -313,16 +313,15 @@ vec4 sampleVolumeColor(vec3 position) {
 
 // calculate actual density value from .raw file
 float calculateDensityFromRatio(float ratio) {
-    if (ratio >= 255.0) {
+    if (ratio == 1.0) {
         return FLOOR_DENSITY;
-    } else if (ratio >= 254.0) {
+    } else if (ratio == (254.0 / 255.0)) {
         return CUBE_DENSTIY;
     } else if (ratio == 0.0) {
         return AIR_DENSITY;
     }
     float interval = uMaxDensity - uMinDensity;
-    float percentage = ratio / 255.0;
-    return (percentage * interval) + uMinDensity;
+    return (ratio * interval) + uMinDensity;
 }
 
 float calculateRefractiveIndexFromDensity(float d) {
@@ -338,16 +337,10 @@ float calculateRefractiveIndexFromDensity(float d) {
     return pow(x, 0.66);
 }
 
-vec3 getVectorOfCertainLength(vec3 vector, float desiredLength) {
-    float vectorLength = length(vector);
-    return desiredLength * vector / vectorLength;
-}
-
-float samplePhotonAndCalculateRefractiveIndex(Photon photon) {
+float samplePhotonAndCalculateRefractiveIndex(Photon photon, float t) {
     // samplenja fotona v smeri in izračun lomnega količnika tam
     // premik fotona v trenutni smeri za natanko velikosti voksla
-    vec3 photonDirectionNextVoxel = getVectorOfCertainLength(photon.direction, 1.0 / uSize);
-    vec3 newPhotonPosition = photon.position + photonDirectionNextVoxel;
+    vec3 newPhotonPosition = photon.position + t * photon.direction;
 
     // izračun gostote in lomenga kolicnika v tem vokslu
     float mappedDensity = texture(uVolume0, newPhotonPosition).r;
@@ -357,32 +350,11 @@ float samplePhotonAndCalculateRefractiveIndex(Photon photon) {
     return refractiveIndex;
 }
 
-float calculateRefractiveAngle(float alpha, float n1, float n2) {
-    // izracun lomnega kota z lomnim zakonom
-    float stevec = sin(alpha) * n1;
-    return asin(stevec / n2);
-}
-
-// izracun novega smernega vektorja po lomu
-// todo: mozno, da bo ze zacetni cos < 0, potem resetiraj glej https://en.wikipedia.org/wiki/Snell%27s_law#Vector_form
-vec3 calculateNewDirectionVector(vec3 incomingVector, vec3 normal, float riRatio, float alpha, float beta) {
-    vec3 ratioIncoming = riRatio * incomingVector;
-    float ratioCosine = riRatio * cos(alpha) - cos(beta);
-    vec3 ratioCosineNormal = ratioCosine * normal;
-    return ratioIncoming + ratioCosineNormal;
-}
-
 vec3 refractPhoton(Photon photon, float n1, float n2) {
     vec3 I = normalize(photon.direction);
     vec3 N = normalize(photon.gradient);
-    float eta = n1 / n2;
+    float eta = 1.0 - n1 / n2;
     return refract(I, N, eta);
-    // handlanje negativnega cos, da je normala obratno obrnjena
-    //if (dot(gradientVector * -1.0f, photon.direction) < 0.0f)
-    //    gradientVector = gradientVector * -1.0f;
-    //float alpha = acos(dot(normalize(photon.direction), normalize(gradientVector)));
-    //float beta = calculateRefractiveAngle(alpha, n1, n2);
-    //return calculateNewDirectionVector(photon.direction, gradientVector, n1 / n2, alpha, beta);
 }
 
 vec3 bouncePhoton(Photon photon, vec3 gradientVector) {
@@ -390,20 +362,20 @@ vec3 bouncePhoton(Photon photon, vec3 gradientVector) {
     return reflect(photon.direction, normalize(gradientVector));
 }
 
-vec4 determineNewPhotonDirection(Photon photon) {
+vec3 determineNewPhotonDirection(Photon photon, float t) {
     // calculation of current refractive index
     float currentDensity = calculateDensityFromRatio(photon.density);
     float currentRI = calculateRefractiveIndexFromDensity(currentDensity);
 
     // caluclation of next refractive index
-    float nextRI = samplePhotonAndCalculateRefractiveIndex(photon);
+    float nextRI = samplePhotonAndCalculateRefractiveIndex(photon, t);
 
     // determine if perform refract or not
     if ((currentRI == FLOOR_REFRACTIVE_INDEX && nextRI == FLOOR_REFRACTIVE_INDEX) || (currentRI == CUBE_REFRACTIVE_INDEX && nextRI == CUBE_REFRACTIVE_INDEX) || 
         (currentRI == AIR_REFRACTIVE_INDEX && nextRI == AIR_REFRACTIVE_INDEX)) {
-        return vec4(photon.direction, currentDensity);
+        return vec3(photon.direction);
     }
-    return vec4(refractPhoton(photon, currentRI, nextRI), currentDensity);
+    return vec3(refractPhoton(photon, currentRI, nextRI));
 }
 
 vec3 randomDirection(vec2 U) {
@@ -438,6 +410,7 @@ void main() {
     vec4 volumeData = texture(uVolume0, photon.position);
     photon.density = volumeData.r;
     photon.gradient = volumeData.gba;
+    photon.gradient = photon.gradient - 0.5;
     photon.direction = directionAndBounces.xyz;
     photon.bounces = uint(directionAndBounces.w + 0.5);
     photon.transmittance = texture(uTransmittance, mappedPosition).rgb;
@@ -455,6 +428,19 @@ void main() {
         float t = -log(r.x) / currentMajorant;
         photon.position += t * photon.direction;
 
+        volumeData = texture(uVolume0, photon.position);
+        photon.density = float(volumeData.r);
+        photon.gradient = volumeData.gba;
+        if (photon.density >= (254.0 / 255.0)) {
+                currentAbsorptionCoefficient = uAbsorptionCoefficient * 100.0;
+                currentMajorant = uMajorant * 100.0;
+                currentScatteringCoefficient = uScatteringCoefficient * 100.0;
+        } else {
+                currentAbsorptionCoefficient = uAbsorptionCoefficient;
+                currentMajorant = uMajorant;
+                currentScatteringCoefficient = uScatteringCoefficient;
+        }
+
         vec4 volumeSample = sampleVolumeColor(photon.position);
         float muAbsorption = volumeSample.a * currentAbsorptionCoefficient;
         float muScattering = volumeSample.a * currentScatteringCoefficient;
@@ -463,10 +449,6 @@ void main() {
         float PNull = abs(muNull) / muMajorant;
         float PAbsorption = muAbsorption / muMajorant;
         float PScattering = muScattering / muMajorant;
-
-        volumeData = texture(uVolume0, photon.position);
-        photon.density = volumeData.r;
-        photon.gradient = volumeData.gba;
 
         // if (any(greaterThan(photon.position, vec3(1))) || any(lessThan(photon.position, vec3(0)))) {
         if (any(greaterThan(photon.position, uMaxCutPlaneValues)) || any(lessThan(photon.position, uMinCutPlaneValues))) {
@@ -491,17 +473,7 @@ void main() {
             r = rand(r);
             float weightS = muScattering / (currentMajorant * PScattering);
             photon.transmittance *= volumeSample.rgb * weightS;
-            vec4 newPhotonDirection = determineNewPhotonDirection(photon);
-            photon.direction = newPhotonDirection.rgb;
-            if (newPhotonDirection.a >= CUBE_DENSTIY) {
-                currentAbsorptionCoefficient = uAbsorptionCoefficient * 100.0;
-                currentMajorant = uMajorant * 100.0;
-                currentScatteringCoefficient = uScatteringCoefficient * 100.0;
-            } else {
-                currentAbsorptionCoefficient = uAbsorptionCoefficient;
-                currentMajorant = uMajorant;
-                currentScatteringCoefficient = uScatteringCoefficient;
-            }
+            photon.direction = determineNewPhotonDirection(photon, t);
             photon.direction = sampleHenyeyGreenstein(uScatteringBias, r, photon.direction);
             photon.bounces++;
         } else {

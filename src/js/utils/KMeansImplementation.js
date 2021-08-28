@@ -3,10 +3,10 @@
 
 class KMeansImplementation {
 
-    static weightForMagnitude = 0.96;
+    static weightForMagnitude = 0.6;
     static maxIterations = 1000;
     // total number of pixels = 256 * 256 = 65.536
-    static minClusterDistance = 10;
+    static minClusterDistance = 5;
     static minClusters = 3;
     static maxClusters = 8;
     static minClusterSize = 20;
@@ -35,7 +35,6 @@ class KMeansImplementation {
     // determine starting k points
     static determineStartingClusterCenters(data, k) {
         let points = [];
-        //points.push(this.getDataAtIndex(data, 0, 1));
         // select first pixel that value of grayscale is not equal 0 and has no value of 0, 254 or 255
         for (const pixel of data) {
                 if (pixel.x === 0 || pixel.x === 254 || pixel.x === 255 || pixel.grayscale === 0) {
@@ -45,8 +44,6 @@ class KMeansImplementation {
                 break;
         }
         while (points.length != k) {
-            //let x = Math.floor(Math.random() * (256));
-            //let y = Math.floor(Math.random() * (256));
             let furthestPixel = {
                 pixel: null,
                 distance: -1
@@ -63,14 +60,8 @@ class KMeansImplementation {
                     furthestPixel.distance = distance;
                 }
             });
-            //let pixel = this.getDataAtIndex(data, x, y);
-            //if (pixel.grayscale != 0 && !points.includes(pixel)) {
-            //    points.push(pixel);
-            //}
             points.push(furthestPixel.pixel);
         }
-        //console.log('starting points are:');
-        //console.log(points);
         return points;
     }
 
@@ -107,9 +98,9 @@ class KMeansImplementation {
         centers.forEach(c => {
             centerInfo.push({
                 center: c,
-                number: 0,
-                x: 0,
-                y: 0
+                number: 1,
+                x: c.x,
+                y: c.y
             });
         });
 
@@ -136,15 +127,8 @@ class KMeansImplementation {
                 number: c.number
             });
         });
-
-        //console.log('adjusting centers:');
-        //console.log(newCenters);
         let adjusted = this.adjustClusters(data, newCenters);
 
-        //console.log('new centers after adjustment');
-        //console.log(adjusted);
-        //console.log('old centers');
-        //console.log(centers);
         // detect any change
         adjusted.forEach(nc => {
             if (centers.every(c => !nc.center.equals(c)))
@@ -161,39 +145,17 @@ class KMeansImplementation {
     // centers = list of new centers, containing cluster center pixel and number of elements it has
     static adjustClusters(data, centers) {
         // check if too many/few clusters
-        //console.log('number of clusters is ' + centers.length);
-        //console.log(centers);
         if (centers.length > this.maxClusters) {
-            //console.log('too many clusters');
             let nearestClusterCenters = this.determineNearestClusters(centers);
             centers = this.mergeClusters(data, centers, nearestClusterCenters.center1, nearestClusterCenters.center2);
         }
         if (centers.length < this.minClusters) {
-            //.log('too little clusters');
             let furthestClusterCenter = this.determineFurthestCluster(centers);
-            //console.log('furthest cluster');
-            //console.log(furthestClusterCenter);
             centers = this.splitCluster(data, centers, furthestClusterCenter);
         }
         // check if cluster centers are too close to each other, than merge
-        //console.log(centers);
         for (const c1 of centers) {
-            //for (const c2 of centers) {
-            //    console.log('center1 is:');
-            //    console.log(c1);
-            //    console.log('center2 is:');
-            //    console.log(c2);
-            //    if (c1.center.equals(c2.center))
-            //        continue;
-            //    let distance = this.calculateDistance(c1.center, c2.center);
-            //    if (distance < this.minClusterDistance)
-            //        centers = this.mergeClusters(data, centers, c1, c2);
-            //}
-            //console.log('center is:');
-            //console.log(c1);
             let nearestCluster = this.determineNearestCluster(centers, c1);
-            //console.log('nearest cluster');
-            //console.log(nearestCluster);
             if (c1.number < this.minClusterSize) {
                 centers = this.mergeClusters(data, centers, nearestCluster.center1, nearestCluster.center2);
             }
@@ -201,8 +163,6 @@ class KMeansImplementation {
                 centers = this.mergeClusters(data, centers, nearestCluster.center1, nearestCluster.center2);
             }
         }        
-        //console.log('returning new centers');
-        //console.log(centers);
         return centers;
     }
 
@@ -264,7 +224,6 @@ class KMeansImplementation {
 
     // remove c2, assign everything to c1
     static mergeClusters(data, centers, c1, c2) {
-        //console.log('merge clusters');
         data.forEach(p => {
             if (p.center !== null && p.center.equals(c2.center)) {
                 p.center = c1.center;
@@ -275,8 +234,6 @@ class KMeansImplementation {
 
     // split cluster by y axis on its center
     static splitCluster(data, centers, ce) {
-        //console.log('splitting cluster:');
-        //console.log(ce);
         let c1 = {
             center: null,
             number: 0,
@@ -291,7 +248,6 @@ class KMeansImplementation {
         };
         data.forEach(p => {
             if (p.center !== null && p.center.equals(ce.center)) {
-                //console.log('belongs in this cluster');
                 // check in which new cluster it belongs
                 if (p.y >= ce.center.y) {
                     p.center = c1;
@@ -306,9 +262,6 @@ class KMeansImplementation {
                 }
             }
         });
-        //console.log('found 2 new centers');
-        //console.log(c1);
-        //console.log(c2);
         c1.center = this.determineNewCenter(data, c1).center;
         c2.center = this.determineNewCenter(data, c2).center;
         let newCenters = centers.filter(c => !c.center.equals(ce.center));
