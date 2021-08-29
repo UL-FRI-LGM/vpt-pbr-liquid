@@ -337,10 +337,16 @@ float calculateRefractiveIndexFromDensity(float d) {
     return pow(x, 0.66);
 }
 
+vec3 getVectorOfLength(vec3 vector, float l) {
+    float vectorLength = length(vector);
+    return l * vector / vectorLength;
+}
+
 float samplePhotonAndCalculateRefractiveIndex(Photon photon, float t) {
     // samplenja fotona v smeri in izračun lomnega količnika tam
     // premik fotona v trenutni smeri za natanko velikosti voksla
-    vec3 newPhotonPosition = photon.position + t * photon.direction;
+    vec3 photonDirectionOneUnit = getVectorOfLength(photon.direction, 1.0 / uSize);
+    vec3 newPhotonPosition = photon.position + photonDirectionOneUnit;
 
     // izračun gostote in lomenga kolicnika v tem vokslu
     float mappedDensity = texture(uVolume0, newPhotonPosition).r;

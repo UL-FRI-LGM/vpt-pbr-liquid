@@ -122,8 +122,13 @@ class KMeansImplementation {
         centerInfo.forEach(c => {
             let newX = Math.round(c.x / c.number);
             let newY = Math.round(c.y / c.number);
+            let pixel = this.getDataAtIndex(data, newX, newY);
+            // if center is on the white pixel, reassign to nearest non white pixel
+            if (pixel.grayscale === 0 || pixel.x === 0 || pixel.x === 254 || pixel.x === 255) {
+                pixel = this.getClosestNonWhitePixel(data, pixel);
+            }
             newCenters.push({
-                center: this.getDataAtIndex(data, newX, newY),
+                center: pixel,
                 number: c.number
             });
         });
@@ -288,8 +293,31 @@ class KMeansImplementation {
         return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
     }
 
+    static getClosestNonWhitePixel(data, pixel) {
+        let closestPixel = {
+            distance: -1,
+            pixel: null
+        };
+        data.forEach(p => {
+            if (p.x === 0 || p.x === 254 || p.x === 255 || p.grayscale === 0)
+                return;
+            if (p.equals(pixel))
+                return;
+            let distance = this.calculateDistance(p, pixel);
+            if (distance < closestPixel.distance || closestPixel.distance === -1) {
+                closestPixel.distance = distance;
+                closestPixel.pixel = p;
+            }
+        });
+        return closestPixel.pixel;
+    }
+
     static getDataAtIndex(data, x, y) {
         return data[y * 256 + x];
+    }
+
+    static get1DIndex(x, y) {
+        return y * 256 + x;
     }
 
 }

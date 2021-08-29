@@ -6,7 +6,7 @@ class ColorInterpolationUtils {
         let colorRatios = Array(peaks.length).fill(1);
         peaks.forEach((peak1, i1) => {
             peaks.forEach((peak2, i2) => {
-                if (i1 == i2)
+                if (i1 == i2 || i1 > i2)
                     return;
                 let d = this.calculateProjectionDistance(peak1, peak2, pixel);
                 colorRatios[i1] *= this.limit(d);
@@ -14,7 +14,7 @@ class ColorInterpolationUtils {
         });
         let totalRatiosSum = 0;
         colorRatios.forEach(ratio => totalRatiosSum += ratio);
-        colorRatios.forEach(ratio => ratio /= totalRatiosSum);
+        colorRatios.forEach((c, i) => colorRatios[i] /= totalRatiosSum);
         let color = this.getColorMix(peaks, colorRatios);
         return color;
     }
